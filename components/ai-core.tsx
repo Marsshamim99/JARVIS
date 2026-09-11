@@ -1,72 +1,63 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
+import { useEffect, useImperativeHandle, useMemo, useState, type Ref } from 'react'
+import { resolveCoreConfig, type AICoreConfig } from '@/lib/ai-core-config'
 
-export function AICore() {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const pausedByUser = useRef(false)
+const CoreCanvas = dynamic(() => import('./ai-core-scene').then((module) => module.CoreCanvas), { ssr: false })
+
+export type AICoreHandle = {
+  configure: (settings: Partial<AICoreConfig>) => void
+  play: () => void
+  pause: () => void
+  reset: () => void
+}
+
+export function AICore({ config, ref }: { config?: Partial<AICoreConfig>; ref?: Ref<AICoreHandle> }) {
+  const [overrides, setOverrides] = useState<Partial<AICoreConfig>>({})
+  const [reducedMotion, setReducedMotion] = useState(false)
+  const [hidden, setHidden] = useState(false)
+  const settings = useMemo(() => resolveCoreConfig({ ...config, ...overrides }), [config, overrides])
+
+  useImperativeHandle(ref, () => ({
+    configure: (patch) => setOverrides((current) => ({ ...current, ...patch })),
+    play: () => setOverrides((current) => ({ ...current, paused: false, respectReducedMotion: false })),
+    pause: () => setOverrides((current) => ({ ...current, paused: true })),
+    reset: () => setOverrides({}),
+  }), [])
 
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-
-    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
-
-    function updatePlayback() {
-      if (!video) return
-
-      if (document.hidden || motionPreference.matches || pausedByUser.current) {
-        video.pause()
-      } else {
-        void video.play().catch(() => {})
-      }
-    }
-
-    updatePlayback()
-    motionPreference.addEventListener('change', updatePlayback)
-    document.addEventListener('visibilitychange', updatePlayback)
-
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const updateMotion = () => setReducedMotion(preference.matches)
+    const updateVisibility = () => setHidden(document.hidden)
+    updateMotion()
+    updateVisibility()
+    preference.addEventListener('change', updateMotion)
+    document.addEventListener('visibilitychange', updateVisibility)
     return () => {
-      motionPreference.removeEventListener('change', updatePlayback)
-      document.removeEventListener('visibilitychange', updatePlayback)
+      preference.removeEventListener('change', updateMotion)
+      document.removeEventListener('visibilitychange', updateVisibility)
     }
   }, [])
 
-  function togglePlayback() {
-    const video = videoRef.current
-    if (!video) return
-
-    if (video.paused) {
-      pausedByUser.current = false
-      void video.play().catch(() => {})
-    } else {
-      pausedByUser.current = true
-      video.pause()
-    }
-  }
+  const paused = settings.paused || (settings.respectReducedMotion && reducedMotion)
 
   return (
-    <video
-      ref={videoRef}
-      className="ai-core-video"
-      src="/media/ai-core.mp4"
-      autoPlay
-      loop
-      muted
-      playsInline
-      preload="auto"
-      disablePictureInPicture
-      disableRemotePlayback
+    <div
+      className="ai-core-canvas"
+      data-paused={paused}
+      role="img"
+      aria-label="Animated golden orbital rings and a luminous blue AI core. Press Space to pause or resume."
       tabIndex={0}
-      aria-label="Rotating AI core. Click or press Space to pause or resume the animation."
-      onClick={togglePlayback}
       onKeyDown={(event) => {
         if (event.nativeEvent.isComposing || event.keyCode === 229) return
-        if (event.key === ' ' || event.key === 'Enter') {
+        if (event.key === ' ') {
           event.preventDefault()
-          togglePlayback()
+          setOverrides((current) => ({ ...current, paused: !paused, respectReducedMotion: false }))
         }
       }}
-    />
+    >
+      <CoreCanvas config={settings} paused={paused} hidden={hidden} />
+    </div>
   )
 }

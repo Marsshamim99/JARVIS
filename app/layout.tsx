@@ -12,7 +12,7 @@ const roboto = Roboto({
 
 export const metadata: Metadata = {
   title: 'AI Core',
-  description: 'An immersive rotating AI core, reproduced from the original video.',
+  description: 'A real-time, code-driven AI core with configurable orbital rings, particles, rotation, and light.',
 }
 
 export const viewport: Viewport = {
