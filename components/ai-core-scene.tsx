@@ -52,9 +52,9 @@ function NeuralNetwork({ config, clock }: LayerProps) {
   return (
     <group ref={group}>
       <lineSegments geometry={wire}>
-        <lineBasicMaterial color={gold} transparent opacity={0.42} toneMapped={false} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <lineBasicMaterial color={gold} transparent opacity={0.28} toneMapped={false} blending={THREE.AdditiveBlending} depthWrite={false} />
       </lineSegments>
-      <GlowPoints positions={positions} color={config.color} size={config.nodeSize} clock={clock} intensity={4} />
+      <GlowPoints positions={positions} color={config.color} size={config.nodeSize * 0.82} clock={clock} intensity={3.1} />
       {[0, 1, 2].map((i) => (
         <group key={i} rotation={[i * 0.8 + 0.3, i * 0.65, i * 0.45]}>
           <Arc radius={config.networkRadius * 1.015} color={gold} opacity={0.35} tube={0.002} />
@@ -168,8 +168,8 @@ function createShellPanel(radius: number, start: number, span: number, latitude:
 
 function ShellPanel({ config, index }: { config: AICoreConfig; index: number }) {
   const start = (index / config.shellSegments) * TAU + 0.1
-  const span = Math.min(0.5, TAU / config.shellSegments * 0.52)
-  const latitude = index % 3 === 0 ? 0.21 : 0.13
+  const span = Math.min(0.72, TAU / config.shellSegments * 0.68)
+  const latitude = index % 3 === 0 ? 0.28 : 0.19
   const panel = useMemo(() => createShellPanel(config.shellRadius, start, span, latitude), [config.shellRadius, start, span, latitude])
   useEffect(() => () => panel.dispose(), [panel])
   const edgeRadius = config.shellRadius * Math.cos(latitude)
@@ -216,9 +216,9 @@ function Shell({ config, clock }: LayerProps) {
   if (!config.shellSegments) return null
   return (
     <group ref={group}>
-      <Arc radius={config.shellRadius} color={config.glassColor} tube={0.009} opacity={0.38} />
-      <Arc radius={config.shellRadius * 0.98} color={config.color} tube={0.002} opacity={0.35} />
-      <Arc radius={config.shellRadius * 1.008} color={config.color} tube={0.002} opacity={0.45} />
+      <Arc radius={config.shellRadius} color={config.glassColor} tube={0.009} opacity={0.12} />
+      <Arc radius={config.shellRadius * 0.98} color={config.color} tube={0.002} opacity={0.2} />
+      <Arc radius={config.shellRadius * 1.008} color={config.color} tube={0.002} opacity={0.26} />
       <lineSegments geometry={ticks}>
         <lineBasicMaterial color={config.color} transparent opacity={0.6} toneMapped={false} depthWrite={false} />
       </lineSegments>
